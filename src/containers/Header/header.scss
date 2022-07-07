@@ -1,0 +1,276 @@
+/* // my css reset
+
+//mixin of media
+// MEDIA QUERY MANAGER */
+/*
+0 - 600px:      Phone
+600 - 900px:    Tablet portrait
+900 - 1200px:   Tablet landscape
+[1200 - 1800] is where our normal styles apply
+1800px + :      Big desktop
+
+$breakpoint arguement choices:
+- phone
+- tab-port
+- tab-land
+- big-desktop
+
+ORDER: Base + typography > general layout + grid > page layout > components
+
+1em = 16px
+*/
+$main: #7548f6;
+@mixin respond($breakpoint) {
+  @if $breakpoint == phone {
+    @media only screen and (max-width: 37.5em) {
+      @content;
+    } // 600px
+  }
+  @if $breakpoint == tab-port {
+    @media only screen and (max-width: 56.25em) {
+      @content;
+    } //900px
+  }
+  @if $breakpoint == tab-land {
+    @media only screen and (max-width: 75em) {
+      @content;
+    } //1200px
+  }
+  @if $breakpoint == big-desktop {
+    @media only screen and (max-width: 112.5em) {
+      @content;
+    } //1800px
+  }
+  @if $breakpoint == hover {
+    @media only screen and (hover: none) {
+      @content;
+    } // phones dose't have  hover => handle that here
+  } @else {
+    @media only screen and (max-width: #{$breakpoint}) {
+      @content;
+    } //special case
+  }
+}
+
+*,
+*::before,
+*::after {
+  padding: 0;
+  margin: 0;
+  box-sizing: inherit;
+}
+
+html {
+  // This defines what 1rem is
+  font-size: 62.5%; //1 rem = 10px; 10px/16px = 62.5%
+
+  @include respond(tab-land) {
+    // width < 1200?
+    font-size: 56.25%; //1 rem = 9px, 9/16 = 50%
+  }
+
+  @include respond(tab-port) {
+    // width < 900?
+    font-size: 50%; //1 rem = 8px, 8/16 = 50%
+  }
+
+  @include respond(big-desktop) {
+    font-size: 75%; //1rem = 12, 12/16
+  }
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  background: #fff;
+  line-height: 1.5;
+  font-family: "Helvetica", "Arial", sans-serif;
+}
+
+ul {
+  list-style: none;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+.nav {
+  &__container {
+    padding: 2rem 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  &__left {
+    color: $main;
+    font-weight: 400;
+    font-size: 2rem;
+  }
+  &__list {
+    display: flex;
+    align-items: center;
+    &--item {
+      &:not(:last-child) {
+        margin-right: 0.3rem;
+      }
+    }
+    &--link {
+      text-decoration: none;
+      color: rgba(0, 0, 0, 0.7);
+      font-size: 1.6rem;
+      font-weight: 400;
+      padding: 0.6rem 0.8rem;
+      transition: all 0.3s linear;
+      font-family: "Cairo";
+      &:hover {
+        color: $main;
+      }
+    }
+  }
+  &__right {
+  }
+  &__response {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.wrapper {
+  width: 100%;
+  max-width: 1350px;
+  margin: 0 auto;
+}
+h1 {
+  color: #fff;
+  font-weight: 400;
+  font-size: 1.8rem;
+}
+.header {
+  background-image: url("../../img/handwritten.jpg");
+  background-size: cover;
+  height: 40rem;
+  margin: 0rem 4rem;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  &__heading {
+    font-weight: 500;
+    color: #fff;
+    font-size: 4rem;
+    letter-spacing: 1px;
+    font-family: "Roboto";
+  }
+  &__content {
+    font-weight: 300;
+    color: #96a1b0;
+    width: 30rem;
+    text-align: center;
+    font-size: 1.4rem;
+    padding: 1rem;
+  }
+  &__search {
+    display: flex;
+    align-items: center;
+  }
+}
+.btn {
+  padding: 0.3rem 1.2rem;
+  margin-right: 2px;
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: #fff;
+  background: $main;
+  border: none;
+  letter-spacing: 1px;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  line-height: 1.8;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.35);
+  font-family: "Cairo";
+  &.white {
+    color: $main;
+    background: #fff;
+  }
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.2),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 2px 4px 0 rgba(0, 0, 0, 0.4);
+  }
+}
+input {
+  font-size: 1.3rem;
+  padding: 0.8rem 0.6rem;
+  width: 40rem;
+  margin-right: 1rem;
+  border-radius: 0.6rem;
+  line-height: 1.8;
+  border: none;
+  outline: none;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.35);
+}
+.presentaion {
+  padding: 4rem;
+  display: flex;
+  justify-content: space-between;
+  .card {
+    &__body {
+      padding: 4rem 2rem;
+      width: 25rem;
+      background: #fff;
+      box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-radius: 1rem;
+    }
+    &__logo {
+      svg {
+        width: 5rem;
+        height: 5rem;
+        fill: $main;
+      }
+    }
+    &__header {
+      font-size: 1.8rem;
+      color: rgba(0, 0, 0, 0.9);
+      font-weight: 400;
+      text-transform: capitalize;
+      font-family: "lato";
+      padding: 1rem 0;
+    }
+    &__content {
+      font-size: 1.4rem;
+      text-align: center;
+    }
+    &__title {
+      font-size: 1.8rem;
+      font-weight: 400;
+      color: $main;
+      text-align: center;
+
+      padding: 0 0 2rem 0;
+    }
+    &.title {
+      width: 40rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+}
