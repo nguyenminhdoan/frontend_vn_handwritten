@@ -2,13 +2,60 @@ import React, { useState } from "react";
 import Result from "../../result/result.txt";
 import "./Feature.css";
 import axios from "axios";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import Slide from "@mui/material/Slide";
+import { TransitionProps } from "@mui/material/transitions";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 const Feature = () => {
   const [previewImage, setPreviewImage] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePrediction, setImagePrediction] = useState("");
   const [chosenFile, setChosenFile] = useState(false);
+  const [open, setOpen] = React.useState(false);
 
+  const downloadTxtFile = () => {
+    const element = document.createElement("a");
+    const file = new Blob([imagePrediction], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    element.href = URL.createObjectURL(file);
+    element.download = "result.txt";
+    document.body.appendChild(element);
+    element.click();
+  };
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const getBase64 = (file) => {
+    return new Promise((resolve) => {
+      let fileInfo;
+      let baseURL = "";
+      // Make new FileReader
+      let reader = new FileReader();
+
+      // Convert the file to base64 text
+      reader.readAsDataURL(file);
+
+      // on reader load somthing...
+      reader.onload = () => {
+        // Make a fileInfo Object
+        baseURL = reader.result;
+        resolve(baseURL);
+      };
+    });
+  };
   const generatePreviewImage = (file, callback) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -34,34 +81,51 @@ const Feature = () => {
       alert("please choose a file");
       return;
     }
-    console.log("uploadTransformerHandler");
-    // event.preventDefault();
-    // const formData = new FormData();
-    // formData.append("file", imageFile, "img_transformer.png");
+    event.preventDefault();
+    const formData = new FormData();
+    formData.append("file", imageFile, "img_transformer.png");
 
-    // let t0 = performance.now();
-    // axios.post("http://127.0.0.1:5000/upload", formData).then((res, data) => {
-    //   data = res.data;
-    //   setImagePrediction(data);
-    //   let t1 = performance.now();
-    //   console.log(data);
-    //   console.log(
-    //     "The time Transformer model took to predict the image " +
-    //       (t1 - t0) +
-    //       " milliseconds."
-    //   );
-    // });
+    getBase64(imageFile).then((result) => {
+      let base_img = result.split(",")[1];
+      const data = { img: base_img };
+      axios
+        .post("http://127.0.0.1:5000/api/recognize", data)
+        .then((data) => {
+          setImagePrediction(data.data.predicted);
+          console.log(data.data.predicted);
+          let t0 = performance.now();
+        })
+        .catch((err) => console.log(err));
+    });
+
+    // axios
+    //   .post("http://127.0.0.1:5000/api/recognize", formData)
+    //   .then((res, data) => {
+    //     data = res.data;
+    //     setImagePrediction(data);
+    //     let t1 = performance.now();
+    //     console.log(data);
+    //     console.log(
+    //       "The time Transformer model took to predict the image " +
+    //         (t1 - t0) +
+    //         " milliseconds."
+    //     );
+    //   });
   };
 
   const uploadCRNNHandler = (event) => {
+    setTimeout(() => {
+      handleClickOpen();
+    }, 1000);
+
     if (!imageFile) {
       alert("please choose a file");
       return;
     }
-    console.log("uploadTransformerHandler");
-    // event.preventDefault();
-    // const formData = new FormData();
-    // formData.append("file", imageFile, "img_crnn.png");
+    event.preventDefault();
+    const formData = new FormData();
+    formData.append("file", imageFile, "img_crnn.png");
+    // downloadTxtFile();
 
     // let t0 = performance.now();
     // axios.post("http://127.0.0.1:5000/upload", formData).then((res, data) => {
@@ -111,7 +175,7 @@ const Feature = () => {
               className="btn"
               // value="Transformer"
             >
-              Transformer Algorithm
+              Transformer
             </button>
           </div>
           <div style={{ margin: "1rem" }}>
@@ -121,7 +185,7 @@ const Feature = () => {
               className="btn"
               // value="LSTM & Attention"
             >
-              Word Beam Search
+              Seg2Seg
             </button>
           </div>
         </div>
@@ -136,15 +200,59 @@ const Feature = () => {
       {/* Text for model prediction */}
       <div className="container--feature__col container--feature__predicted ">
         {imagePrediction && <p>The model predicted: {imagePrediction}</p> && (
-          <a href={Result} download="result.txt" className="btn">
+          <button
+            style={{
+              padding: 15,
+              border: "none",
+              textAlign: "center",
+              cursor: "pointer",
+              backgroundColor: "#71face",
+            }}
+            onClick={downloadTxtFile}
+          >
             Click to download
-          </a>
+          </button>
         )}
       </div>
-      <div>
-        {imagePrediction && <p>The model predicted: {imagePrediction}</p>}
+      <div style={{ fontSize: 13, textAlign: "left", padding: 20 }}>
+        {imagePrediction && (
+          <div>
+            {" "}
+            <p>Your result is: </p> <span>{imagePrediction}</span>
+          </div>
+        )}
       </div>
+      <DialogComp open={open} setOpen={setOpen} />
     </div>
+  );
+};
+
+const DialogComp = ({ open, setOpen }) => {
+  const handleClose = () => {
+    setOpen(false);
+  };
+  return (
+    <Dialog
+      open={open}
+      TransitionComponent={Transition}
+      keepMounted
+      onClose={handleClose}
+      aria-describedby="alert-dialog-slide-description"
+    >
+      <DialogTitle>
+        {"Bạn có hài lòng với kết quả được dự đoán không?"}
+      </DialogTitle>
+      <DialogContent>
+        <DialogContentText id="alert-dialog-slide-description">
+          Nếu thấy kết quả không đúng như ý hãy giúp chúng mình cải thiện hơn
+          bằng cách upload hình ảnh và đoạn chữ tương ứng nhé &hearts;
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>Hài lòng lắm</Button>
+        <Button onClick={handleClose}>Cải thiện nào</Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 

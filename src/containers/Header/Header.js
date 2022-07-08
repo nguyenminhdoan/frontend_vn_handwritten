@@ -46,10 +46,10 @@ const Header = () => {
           <div class="header__content">
             Lorem ipsum dolor sit amet consectetur
           </div>
-          <div class="header__search">
+          {/* <div class="header__search">
             <input type="text" placeholder="search..." />
             <button class="btn white">Search</button>
-          </div>
+          </div> */}
         </header>
         <section class="presentaion">
           <div class="card">
