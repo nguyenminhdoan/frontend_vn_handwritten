@@ -12,9 +12,14 @@ import { TransitionProps } from "@mui/material/transitions";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 
+import * as pdfjs from "pdfjs-dist";
+pdfjs.GlobalWorkerOptions.workerSrc = require("pdfjs-dist/build/pdf.worker.entry.js");
+
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
+
+// const PDFJS = window.pdfjsLib;
 
 const Feature = () => {
   const [previewImage, setPreviewImage] = useState(false);
@@ -22,6 +27,7 @@ const Feature = () => {
   const [imagePrediction, setImagePrediction] = useState("");
   const [chosenFile, setChosenFile] = useState(false);
   const [open, setOpen] = React.useState(false);
+  const [pdf, setPdf] = React.useState("");
 
   const downloadTxtFile = () => {
     const element = document.createElement("a");
@@ -62,11 +68,46 @@ const Feature = () => {
     reader.onloadend = (e) => callback(reader.result);
   };
 
+  const convertPdfToImages = async (file) => {
+    let images = [];
+    const data = await readFileData(file);
+    const pdf = await pdfjs.getDocument(data).promise;
+    const canvas = document.createElement("canvas");
+    for (let i = 0; i < pdf.numPages; i++) {
+      const page = await pdf.getPage(i + 1);
+      const viewport = page.getViewport({ scale: 1 });
+      const context = canvas.getContext("2d");
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      await page.render({ canvasContext: context, viewport: viewport }).promise;
+      images.push(canvas.toDataURL());
+    }
+    canvas.remove();
+    console.log(images);
+    return images;
+  };
+
+  const readFileData = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        resolve(e.target.result);
+      };
+      reader.onerror = (err) => {
+        reject(err);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleChange = (event) => {
     const file = event.target.files[0];
 
     if (!file) {
       return;
+    }
+    if (file.type === "application/pdf") {
+      convertPdfToImages(file);
     }
 
     setImageFile(file);
@@ -82,35 +123,26 @@ const Feature = () => {
       return;
     }
     event.preventDefault();
-    const formData = new FormData();
-    formData.append("file", imageFile, "img_transformer.png");
+    // const formData = new FormData();
+    // formData.append("file", imageFile, "img_transformer.png");
+    let t0 = performance.now();
 
     getBase64(imageFile).then((result) => {
       let base_img = result.split(",")[1];
-      const data = { img: base_img };
+      const data = { img: base_img, type: "transformer" };
       axios
         .post("http://127.0.0.1:5000/api/recognize", data)
         .then((data) => {
           setImagePrediction(data.data.predicted);
-          console.log(data.data.predicted);
-          let t0 = performance.now();
+          let t1 = performance.now();
+          console.log(
+            "The time Transformer model took to predict the image " +
+              (t1 - t0) +
+              " milliseconds."
+          );
         })
         .catch((err) => console.log(err));
     });
-
-    // axios
-    //   .post("http://127.0.0.1:5000/api/recognize", formData)
-    //   .then((res, data) => {
-    //     data = res.data;
-    //     setImagePrediction(data);
-    //     let t1 = performance.now();
-    //     console.log(data);
-    //     console.log(
-    //       "The time Transformer model took to predict the image " +
-    //         (t1 - t0) +
-    //         " milliseconds."
-    //     );
-    //   });
   };
 
   const uploadCRNNHandler = (event) => {
@@ -123,22 +155,24 @@ const Feature = () => {
       return;
     }
     event.preventDefault();
-    const formData = new FormData();
-    formData.append("file", imageFile, "img_crnn.png");
-    // downloadTxtFile();
 
-    // let t0 = performance.now();
-    // axios.post("http://127.0.0.1:5000/upload", formData).then((res, data) => {
-    //   data = res.data;
-    //   setImagePrediction(data);
-    //   let t1 = performance.now();
-    //   console.log(data);
-    //   console.log(
-    //     "The time LSTM & Attention took to predict the image " +
-    //       (t1 - t0) +
-    //       " milliseconds."
-    //   );
-    // });
+    let t0 = performance.now();
+    getBase64(imageFile).then((result) => {
+      let base_img = result.split(",")[1];
+      const data = { img: base_img, type: "rnn" };
+      axios
+        .post("http://127.0.0.1:5000/api/recognize", data)
+        .then((data) => {
+          setImagePrediction(data.data.predicted);
+          let t1 = performance.now();
+          console.log(
+            "The time Transformer model took to predict the image " +
+              (t1 - t0) +
+              " milliseconds."
+          );
+        })
+        .catch((err) => console.log(err));
+    });
   };
 
   return (
